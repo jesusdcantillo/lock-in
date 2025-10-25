@@ -68,16 +68,16 @@ def complete_habit(db: Session, habit_id: int, user_id: int):
     now = datetime.now()
     today = now.date()
 
-    # Si ya fue complteado hoy, no vuelve a sumar
+    # Si ya fue completado hoy
     if habit.last_completed and habit.last_completed.date() == today:
         return habit, "Hábito ya completado hoy."
     
-    # Determinar si la última vez que se completó fue ayer - Sumar streak
+    # Determinar si la última vez que se completó fue ayer - Sumar racha
     yesterday = today - timedelta(days=1)
     if habit.last_completed and habit.last_completed.date() == yesterday:
         habit.streak += 1
     else:
-        habit.streak = 1  # Reiniciar streak si no fue ayer
+        habit.streak = 1  # Reiniciar racha si no fue ayer
 
     habit.completed = True
     habit.last_completed = now
@@ -89,7 +89,8 @@ def complete_habit(db: Session, habit_id: int, user_id: int):
     db.commit()
     db.refresh(habit)
     db.refresh(user)
-    return habit, "Hábito completado con éxito."
+    
+    return habit, "Hábito completado correctamente."
     
 # Actualizar hábito
 def update_habit(db: Session, habit_id: int, habit_update: schemas.HabitUpdate, user_id: int):

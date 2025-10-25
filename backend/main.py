@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from . import models, schemas, crud
 from .db import engine, SessionLocal
 from .security import verify_password, create_access_token, verify_token
-from datetime import datetime, date
 
 models.Base.metadata.create_all(bind = engine)
 
@@ -104,7 +105,7 @@ def get_stats(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
     return crud.get_user_stats(db=db, user_id=user.id)
 
 # Completar hábito
-@app.put("/habits/{habit_id}/complete", response_model=schemas.HabitResponse)
+@app.put("/habits/{habit_id}/complete")
 def complete_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_token(token)
     if not payload:
@@ -114,11 +115,18 @@ def complete_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Sessi
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
-    completed_habit, error = crud.complete_habit(db=db, habit_id=habit_id, user_id=user.id)
-    if error:
-        raise HTTPException(status_code=404, detail=error)
+    completed_habit, message = crud.complete_habit(db=db, habit_id=habit_id, user_id=user.id)
     
-    return completed_habit
+    if not completed_habit:
+        raise HTTPException(status_code=404, detail=message)
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "habit": jsonable_encoder(completed_habit),
+            "message": message
+        }
+    )
 
 # Actualizar hábito
 @app.put("/habits/{habit_id}", response_model=schemas.HabitResponse)
