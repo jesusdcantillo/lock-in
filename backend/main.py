@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from . import models, schemas, crud
 from .db import engine, SessionLocal
 from .security import verify_password, create_access_token, verify_token
+from datetime import datetime, date
 
 models.Base.metadata.create_all(bind = engine)
 
@@ -44,14 +45,24 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token = create_access_token({"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Perfil (autenticado)
+# Perfil del usuario
 @app.get("/profile")
-def get_profile(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    token = credentials.credentials
+def get_profile(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
-    return {"message": "Bienvenido a tu perfil.", "user": payload["sub"]}
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+    return {
+        "message": f"Bienvenido, {user.username}!",
+        "user": {
+            "email": user.email,
+            "created_at": user.created_at
+        }
+    }
 
 # Crear hábito
 @app.post("/habits", response_model=schemas.HabitResponse)
@@ -78,6 +89,36 @@ def get_habits(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
     return crud.get_habits_by_user(db=db, user_id=user.id)
+
+# Estadísticas del usuario
+@app.get("/stats", response_model=schemas.StatsResponse)
+def get_stats(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+    return crud.get_user_stats(db=db, user_id=user.id)
+
+# Completar hábito
+@app.put("/habits/{habit_id}/complete", response_model=schemas.HabitResponse)
+def complete_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+    completed_habit, error = crud.complete_habit(db=db, habit_id=habit_id, user_id=user.id)
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+    
+    return completed_habit
 
 # Actualizar hábito
 @app.put("/habits/{habit_id}", response_model=schemas.HabitResponse)
