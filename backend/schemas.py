@@ -49,3 +49,20 @@ class StatsResponse(BaseModel):
     habits_count: int
     habits_completed_today: int
     longest_streak: int
+
+class AchievementResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    key: str
+
+    class Config:
+        from_attributes = True
+
+class UserAchievementResponse(BaseModel):
+    id: int
+    achievement: AchievementResponse
+    obtained_at: datetime
+
+    class Config:
+        from_attributes = True
