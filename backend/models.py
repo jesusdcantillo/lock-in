@@ -16,6 +16,8 @@ class User(Base):
     # Relaciones
     habits = relationship("Habit", back_populates="owner")
     user_achievements = relationship("UserAchievement", back_populates="user")
+    created_events = relationship("Event", back_populates="creator")
+    event_attendances = relationship("EventAttendee", back_populates="user")
 
 class Habit(Base):
     __tablename__ = "habits"
@@ -54,3 +56,30 @@ class UserAchievement(Base):
     # Relaciones
     user = relationship("User", back_populates="user_achievements")
     achievement = relationship("Achievement", back_populates="user_achievements")
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(Text, nullable=True)
+    location = Column(String, nullable=True)
+    date = Column(DateTime)
+    creator_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    creator = relationship("User", back_populates="created_events")
+    attendees = relationship("EventAttendee", back_populates="event")
+
+class EventAttendee(Base):
+    __tablename__ = "event_attendees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    attended_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    event = relationship("Event", back_populates="attendees")
+    user = relationship("User", back_populates="event_attendances")
