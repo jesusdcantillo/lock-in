@@ -244,3 +244,61 @@ def check_and_grant_achievements(db: Session, user_id: int):
             granted.append("legendary_consistency")
     
     return granted
+
+# Crear evento
+def create_event(db: Session, event: schemas.EventCreate, creator_id: int):
+    db_event = models.Event(**event.model_dump(), creator_id=creator_id)
+    db.add(db_event)
+    db.commit()
+    db.refresh(db_event)
+    return db_event
+
+# Obtener todos los eventos
+def get_all_events(db: Session, skip: int = 0, limit: int = 50):
+    return db.query(models.Event).order_by(models.Event.date).offset(skip).limit(limit).all()
+
+# Obtener evento por ID
+def get_event_by_id(db: Session, event_id: int):
+    return db.query(models.Event).filter(models.Event.id == event_id).first()
+
+# Marcar asistencia a un evento
+def attend_event(db: Session, event_id: int, user_id: int):
+    # Verificar si el evento existe
+    event = get_event_by_id(db, event_id)
+    if not event:
+        return None, "Evento no encontrado."
+    
+    # Verificar si el usuario ya está registrado
+    existing_attendance = db.query(models.EventAttendee).filter(
+        models.EventAttendee.event_id == event_id,
+        models.EventAttendee.user_id == user_id
+    ).first()
+    
+    if existing_attendance:
+        return None, "Ya estás registrado en este evento."
+    
+    # Crear la asistencia
+    attendance = models.EventAttendee(event_id=event_id, user_id=user_id)
+    db.add(attendance)
+    db.commit()
+    db.refresh(attendance)
+    
+    return attendance, "Asistencia registrada correctamente."
+
+# Obtener asistentes de un evento
+def get_event_attendees(db: Session, event_id: int):
+    attendees = db.query(models.User).join(
+        models.EventAttendee, 
+        models.EventAttendee.user_id == models.User.id
+    ).filter(
+        models.EventAttendee.event_id == event_id
+    ).all()
+    
+    return attendees
+
+# Verificar si un usuario es el creador de un evento
+def is_event_creator(db: Session, event_id: int, user_id: int):
+    event = get_event_by_id(db, event_id)
+    if not event:
+        return False
+    return event.creator_id == user_id
