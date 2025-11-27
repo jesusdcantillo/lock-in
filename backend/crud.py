@@ -133,3 +133,114 @@ def get_user_stats(db: Session, user_id: int):
         "habits_completed_today": habits_completed_today,
         "longest_streak": longest_streak,
     }
+
+# ===== LOGROS =====
+
+# Obtener todos los logros disponibles
+def get_all_achievements(db: Session):
+    return db.query(models.Achievement).all()
+
+# Obtener logros de un usuario
+def get_user_achievements(db: Session, user_id: int):
+    return db.query(models.UserAchievement).filter(models.UserAchievement.user_id == user_id).all()
+
+# Verifica si un usuario tiene un logro
+def user_has_achievement(db: Session, user_id: int, achievement_key: str):
+    achievement = db.query(models.Achievement).filter(models.Achievement.key == achievement_key).first()
+    if not achievement:
+        return False
+    
+    user_achievement = db.query(models.UserAchievement).filter(
+        models.UserAchievement.user_id == user_id,
+        models.UserAchievement.achievement_id == achievement.id
+    ).first()
+    
+    return user_achievement is not None
+
+# Asignar logro a un usuario
+def grant_achievement(db: Session, user_id: int, achievement_key: str):
+    # Verificar si ya tiene el logro
+    if user_has_achievement(db, user_id, achievement_key):
+        return None
+    
+    # Obtener el logro
+    achievement = db.query(models.Achievement).filter(models.Achievement.key == achievement_key).first()
+    if not achievement:
+        return None
+    
+    # Crear la relación
+    user_achievement = models.UserAchievement(
+        user_id=user_id,
+        achievement_id=achievement.id
+    )
+    db.add(user_achievement)
+    db.commit()
+    db.refresh(user_achievement)
+    return user_achievement
+
+# Verificar y otorgar logros automáticamente
+def check_and_grant_achievements(db: Session, user_id: int):
+
+    granted = []
+    
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return granted
+    
+    habits = db.query(models.Habit).filter(models.Habit.owner_id == user_id).all()
+    
+    # 1. Primer Paso - Crea tu primer hábito
+    if len(habits) >= 1 and not user_has_achievement(db, user_id, "first_step"):
+        achievement = grant_achievement(db, user_id, "first_step")
+        if achievement:
+            granted.append("first_step")
+    
+    # 2. Día Productivo - Completa al menos un hábito en un mismo día
+    today = date.today()
+    habits_completed_today = sum(1 for h in habits if h.last_completed and h.last_completed.date() == today)
+    if habits_completed_today >= 1 and not user_has_achievement(db, user_id, "productive_day"):
+        achievement = grant_achievement(db, user_id, "productive_day")
+        if achievement:
+            granted.append("productive_day")
+    
+    # 3. Semana de Constancia - Racha de 7 días
+    max_streak = max((h.streak for h in habits), default=0)
+    if max_streak >= 7 and not user_has_achievement(db, user_id, "week_consistency"):
+        achievement = grant_achievement(db, user_id, "week_consistency")
+        if achievement:
+            granted.append("week_consistency")
+    
+    # 4. Hábito Formado - Completa un mismo hábito 21 veces
+    max_completions = max((h.streak for h in habits), default=0)
+    if max_completions >= 21 and not user_has_achievement(db, user_id, "habit_formed"):
+        achievement = grant_achievement(db, user_id, "habit_formed")
+        if achievement:
+            granted.append("habit_formed")
+    
+    # 5. Maestro de la Rutina - Completa todos tus hábitos del día durante 5 días consecutivos
+    if len(habits) > 0:
+        all_habits_good_streak = all(h.streak >= 5 for h in habits)
+        if all_habits_good_streak and not user_has_achievement(db, user_id, "routine_master"):
+            achievement = grant_achievement(db, user_id, "routine_master")
+            if achievement:
+                granted.append("routine_master")
+    
+    # 6. Subiendo de Nivel - Alcanza 500 puntos
+    if user.total_points >= 500 and not user_has_achievement(db, user_id, "leveling_up"):
+        achievement = grant_achievement(db, user_id, "leveling_up")
+        if achievement:
+            granted.append("leveling_up")
+    
+    # 7. Creador de Ritmo - Crea 5 hábitos diferentes
+    if len(habits) >= 5 and not user_has_achievement(db, user_id, "rhythm_creator"):
+        achievement = grant_achievement(db, user_id, "rhythm_creator")
+        if achievement:
+            granted.append("rhythm_creator")
+    
+    # 8. Constancia Legendaria - Racha de 30 días
+    if max_streak >= 30 and not user_has_achievement(db, user_id, "legendary_consistency"):
+        achievement = grant_achievement(db, user_id, "legendary_consistency")
+        if achievement:
+            granted.append("legendary_consistency")
+    
+    return granted
