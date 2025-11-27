@@ -29,16 +29,19 @@ def root():
 # Listar usuarios
 @app.get("/users", response_model = list[schemas.UserResponse])
 def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Obtiene una lista de usuarios con paginación"""
     return crud.get_users(db, skip = skip, limit = limit)
 
 # Crear usuario
 @app.post ("/users", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Crea un nuevo usuario en la base de datos"""
     return crud.create_user(db = db, user = user)
 
 # Login
 @app.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """Autentica al usuario y devuelve un token JWT"""
     user = crud.get_user_by_username(db, username=form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Usuario y/o contraseña incorrectos.")
@@ -49,6 +52,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 # Perfil del usuario
 @app.get("/profile")
 def get_profile(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Obtiene el perfil del usuario autenticado"""
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -68,6 +72,7 @@ def get_profile(token: str = Depends(oauth2_scheme), db: Session = Depends(get_d
 # Crear hábito
 @app.post("/habits", response_model=schemas.HabitResponse)
 def create_habit(habit: schemas.HabitCreate, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Crea un nuevo hábito para el usuario autenticado"""
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -76,11 +81,17 @@ def create_habit(habit: schemas.HabitCreate, token: str = Depends(oauth2_scheme)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
-    return crud.create_habit(db=db, habit=habit, user_id=user.id)
+    new_habit = crud.create_habit(db=db, habit=habit, user_id=user.id)
+    
+    # Verificar y otorgar logros automáticamente
+    crud.check_and_grant_achievements(db, user.id)
+    
+    return new_habit
 
 # Listar hábitos por usuario
 @app.get("/habits", response_model=list[schemas.HabitResponse])
 def get_habits(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Obtiene la lista de hábitos del usuario autenticado"""
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -94,6 +105,7 @@ def get_habits(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db
 # Estadísticas del usuario
 @app.get("/stats", response_model=schemas.StatsResponse)
 def get_stats(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Obtiene las estadísticas del usuario autenticado"""
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -107,6 +119,7 @@ def get_stats(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 # Completar hábito
 @app.put("/habits/{habit_id}/complete")
 def complete_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Marca un hábito como completado para hoy, actualiza racha y puntos"""
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -120,17 +133,22 @@ def complete_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Sessi
     if not completed_habit:
         raise HTTPException(status_code=404, detail=message)
     
+    # Verificar y otorgar logros automáticamente después de completar
+    granted_achievements = crud.check_and_grant_achievements(db, user.id)
+    
     return JSONResponse(
         status_code=200,
         content={
             "habit": jsonable_encoder(completed_habit),
-            "message": message
+            "message": message,
+            "achievements_granted": granted_achievements
         }
     )
 
 # Actualizar hábito
 @app.put("/habits/{habit_id}", response_model=schemas.HabitResponse)
 def update_habit(habit_id: int, habit_update: schemas.HabitUpdate, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Actualiza los detalles de un hábito específico del usuario autenticado"""
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -148,6 +166,7 @@ def update_habit(habit_id: int, habit_update: schemas.HabitUpdate, token: str = 
 # Eliminar hábito
 @app.delete("/habits/{habit_id}")
 def delete_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Elimina un hábito específico del usuario autenticado"""
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido o expirado.")
@@ -161,3 +180,25 @@ def delete_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Session
         raise HTTPException(status_code=404, detail="Hábito no encontrado.")
     
     return {"detail": "Hábito eliminado correctamente."}
+
+# ===== ENDPOINTS DE LOGROS =====
+
+# Obtener todos los logros disponibles
+@app.get("/achievements", response_model=list[schemas.AchievementResponse])
+def get_achievements(db: Session = Depends(get_db)):
+    """Lista todos los logros disponibles en la plataforma"""
+    return crud.get_all_achievements(db)
+
+# Obtener logros del usuario autenticado
+@app.get("/achievements/me", response_model=list[schemas.UserAchievementResponse])
+def get_my_achievements(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Obtiene los logros que el usuario autenticado ha obtenido"""
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    
+    return crud.get_user_achievements(db, user_id=user.id)
