@@ -202,3 +202,72 @@ def get_my_achievements(token: str = Depends(oauth2_scheme), db: Session = Depen
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
     
     return crud.get_user_achievements(db, user_id=user.id)
+
+# ===== ENDPOINTS DE EVENTOS =====
+
+# Crear evento
+@app.post("/events", response_model=schemas.EventResponse)
+def create_event(event: schemas.EventCreate, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Crea un nuevo evento"""
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    
+    return crud.create_event(db=db, event=event, creator_id=user.id)
+
+# Listar todos los eventos
+@app.get("/events", response_model=list[schemas.EventResponse])
+def get_events(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+    """Lista todos los eventos disponibles ordenados por fecha"""
+    return crud.get_all_events(db, skip=skip, limit=limit)
+
+# Obtener detalles de un evento específico
+@app.get("/events/{event_id}", response_model=schemas.EventResponse)
+def get_event(event_id: int, db: Session = Depends(get_db)):
+    """Obtiene los detalles de un evento específico: nombre, descripción, ubicación, fecha y creador"""
+    event = crud.get_event_by_id(db, event_id=event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Evento no encontrado.")
+    
+    return event
+
+# Marcar asistencia a un evento
+@app.post("/events/{event_id}/attend")
+def attend_event(event_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Registra la asistencia del usuario autenticado a un evento"""
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    
+    attendance, message = crud.attend_event(db=db, event_id=event_id, user_id=user.id)
+    
+    if not attendance:
+        raise HTTPException(status_code=400, detail=message)
+    
+    return {"message": message}
+
+# Obtener asistentes de un evento (solo para el creador)
+@app.get("/events/{event_id}/attendees", response_model=list[schemas.AttendeeResponse])
+def get_event_attendees(event_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Obtiene la lista de asistentes de un evento (solo accesible para el creador del evento)"""
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    
+    # Verificar que el usuario sea el creador del evento
+    if not crud.is_event_creator(db, event_id=event_id, user_id=user.id):
+        raise HTTPException(status_code=403, detail="Solo el creador del evento puede ver los asistentes.")
+    
+    return crud.get_event_attendees(db, event_id=event_id)
