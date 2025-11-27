@@ -66,3 +66,37 @@ class UserAchievementResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class EventBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    location: Optional[str] = None
+    date: datetime
+
+class EventCreate(EventBase):
+    pass
+
+class EventCreatorResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+class EventResponse(EventBase):
+    id: int
+    creator_id: int
+    creator: EventCreatorResponse
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class AttendeeResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+
+    class Config:
+        from_attributes = True
