@@ -6,4 +6,3 @@ passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 # Fix build on Render by using prebuilt wheels for pydantic-core
 pydantic==2.7.4
-pydantic-core==2.18.4
