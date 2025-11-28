@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
@@ -13,9 +14,13 @@ models.Base.metadata.create_all(bind = engine)
 app = FastAPI()
 
 # Configurar CORS
+_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+frontend_origin = os.getenv("FRONTEND_ORIGIN")  # e.g. https://tu-app.vercel.app
+if frontend_origin and frontend_origin not in _origins:
+    _origins.append(frontend_origin)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
