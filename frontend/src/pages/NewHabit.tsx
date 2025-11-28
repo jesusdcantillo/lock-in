@@ -40,7 +40,7 @@ export default function NewHabit() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in pt-8 md:pt-12">
         <div className="flex items-center gap-4">
           <Link to="/habits" className="text-brand-600 hover:text-brand-700">
             <ArrowLeft className="w-6 h-6" />
