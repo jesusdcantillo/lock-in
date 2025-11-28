@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Layout from "../components/Layout";
+import Card from "../components/ui/Card";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
 import { habitsAPI } from "../services/api";
 import { Plus, ArrowLeft } from "lucide-react";
 
@@ -39,29 +42,27 @@ export default function NewHabit() {
     <Layout>
       <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         <div className="flex items-center gap-4">
-          <Link to="/habits" className="text-orange-600 hover:text-orange-700">
+          <Link to="/habits" className="text-brand-600 hover:text-brand-700">
             <ArrowLeft className="w-6 h-6" />
           </Link>
-          <h1 className="text-4xl font-bold text-orange-600 title">
-            Nuevo Hábito
-          </h1>
+          <h1 className="text-4xl font-bold text-brand-700">Nuevo Hábito</h1>
         </div>
 
-        <div className="bg-white rounded-xl p-8 shadow-lg">
+        <Card className="p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
                 htmlFor="name"
-                className="block text-orange-700 font-semibold mb-2"
+                className="block text-brand-700 font-semibold mb-2"
               >
                 Nombre del Hábito *
               </label>
-              <input
+              <Input
                 id="name"
+                label=""
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
                 placeholder="Ej: Hacer ejercicio"
                 maxLength={100}
               />
@@ -70,7 +71,7 @@ export default function NewHabit() {
             <div>
               <label
                 htmlFor="description"
-                className="block text-orange-700 font-semibold mb-2"
+                className="block text-brand-700 font-semibold mb-2"
               >
                 Descripción (opcional)
               </label>
@@ -78,46 +79,41 @@ export default function NewHabit() {
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                className="w-full px-4 py-3 border-2 border-brand-200 rounded-xl focus:border-brand-500 focus:outline-none transition-colors resize-none"
                 placeholder="Ej: 30 minutos de cardio o pesas"
                 rows={4}
                 maxLength={500}
               />
-              <p className="text-sm text-orange-600 mt-1">
+              <p className="text-sm text-brand-600 mt-1">
                 {description.length}/500 caracteres
               </p>
             </div>
 
             {error && (
-              <div className="p-4 bg-red-100 text-red-700 rounded-lg">
+              <div className="p-4 bg-red-50 text-red-700 rounded-xl border border-red-200">
                 {error}
               </div>
             )}
 
             <div className="flex gap-4">
-              <button
+              <Button
                 type="submit"
                 disabled={loading || !name.trim()}
-                className="flex-1 bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-semibold flex items-center justify-center gap-2"
+                className="flex-1 flex items-center justify-center gap-2"
               >
                 <Plus className="w-5 h-5" />
                 {loading ? "Creando..." : "Crear Hábito"}
-              </button>
-              <Link
-                to="/habits"
-                className="px-6 py-3 border-2 border-orange-300 text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-semibold"
-              >
-                Cancelar
+              </Button>
+              <Link to="/habits">
+                <Button variant="secondary">Cancelar</Button>
               </Link>
             </div>
           </form>
-        </div>
+        </Card>
 
-        <div className="bg-orange-50 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-orange-700 mb-2">
-            💡 Consejos
-          </h2>
-          <ul className="space-y-2 text-orange-700">
+        <div className="bg-brand-50 rounded-xl p-6">
+          <h2 className="text-lg font-bold text-brand-700 mb-2">💡 Consejos</h2>
+          <ul className="space-y-2 text-brand-700">
             <li>• Sé específico con el nombre del hábito</li>
             <li>• Usa la descripción para detallar cómo y cuándo realizarlo</li>
             <li>• Completa tu hábito diariamente para aumentar tu racha</li>
