@@ -1,0 +1,176 @@
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import Layout from "../components/Layout";
+import { eventsAPI } from "../services/api";
+import { Calendar, MapPin, FileText, Plus, ArrowLeft } from "lucide-react";
+
+export default function NewEvent() {
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [date, setDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !date) {
+      setError("El nombre y la fecha son requeridos");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      await eventsAPI.create({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        location: location.trim() || undefined,
+        date: date,
+      });
+      navigate("/events");
+    } catch (err) {
+      setError("Error al crear el evento");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+        <div className="flex items-center gap-4">
+          <Link to="/events" className="text-orange-600 hover:text-orange-700">
+            <ArrowLeft className="w-6 h-6" />
+          </Link>
+          <h1 className="text-4xl font-bold text-orange-600 title">
+            Crear Evento
+          </h1>
+        </div>
+
+        <div className="bg-white rounded-xl p-8 shadow-lg">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-orange-700 font-semibold mb-2 flex items-center gap-2"
+              >
+                <FileText className="w-5 h-5" />
+                Nombre del Evento *
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
+                placeholder="Ej: Meetup de Productividad"
+                maxLength={100}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="description"
+                className="block text-orange-700 font-semibold mb-2"
+              >
+                Descripción (opcional)
+              </label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                placeholder="Ej: Evento para compartir técnicas de productividad y crear hábitos saludables"
+                rows={4}
+                maxLength={500}
+              />
+              <p className="text-sm text-orange-600 mt-1">
+                {description.length}/500 caracteres
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="location"
+                className="block text-orange-700 font-semibold mb-2 flex items-center gap-2"
+              >
+                <MapPin className="w-5 h-5" />
+                Ubicación (opcional)
+              </label>
+              <input
+                id="location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
+                placeholder="Ej: Centro Comunitario, Calle Principal 123"
+                maxLength={200}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="date"
+                className="block text-orange-700 font-semibold mb-2 flex items-center gap-2"
+              >
+                <Calendar className="w-5 h-5" />
+                Fecha y Hora *
+              </label>
+              <input
+                id="date"
+                type="datetime-local"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors"
+                min={new Date().toISOString().slice(0, 16)}
+              />
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-100 text-red-700 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={loading || !name.trim() || !date}
+                className="flex-1 bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-semibold flex items-center justify-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                {loading ? "Creando..." : "Crear Evento"}
+              </button>
+              <Link
+                to="/events"
+                className="px-6 py-3 border-2 border-orange-300 text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-semibold"
+              >
+                Cancelar
+              </Link>
+            </div>
+          </form>
+        </div>
+
+        <div className="bg-orange-50 rounded-xl p-6">
+          <h2 className="text-lg font-bold text-orange-700 mb-2">
+            💡 Consejos
+          </h2>
+          <ul className="space-y-2 text-orange-700">
+            <li>• Elige un nombre descriptivo y atractivo para tu evento</li>
+            <li>• Incluye todos los detalles importantes en la descripción</li>
+            <li>
+              • Especifica la ubicación exacta para facilitar la asistencia
+            </li>
+            <li>
+              • Los participantes podrán registrarse para asistir a tu evento
+            </li>
+          </ul>
+        </div>
+      </div>
+    </Layout>
+  );
+}
