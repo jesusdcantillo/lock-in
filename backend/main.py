@@ -309,3 +309,31 @@ def get_event_attendees(event_id: int, token: str = Depends(oauth2_scheme), db: 
         raise HTTPException(status_code=403, detail=f"Solo el creador del evento puede ver los asistentes. Tu ID: {user.id}, Creator ID: {event.creator_id if event else 'unknown'}")
     
     return crud.get_event_attendees(db, event_id=event_id)
+
+# Actualizar descripción de evento (solo creador)
+@app.put("/events/{event_id}", response_model=schemas.EventResponse)
+def update_event(event_id: int, event_update: schemas.EventUpdate, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    updated, message = crud.update_event_description(db=db, event_id=event_id, user_id=user.id, description=event_update.description)
+    if not updated:
+        raise HTTPException(status_code=403, detail=message)
+    return updated
+
+# Eliminar evento (solo creador)
+@app.delete("/events/{event_id}")
+def delete_event(event_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    ok, message = crud.delete_event(db=db, event_id=event_id, user_id=user.id)
+    if not ok:
+        raise HTTPException(status_code=403, detail=message)
+    return {"detail": message}
