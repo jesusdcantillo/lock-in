@@ -314,3 +314,26 @@ def is_event_creator(db: Session, event_id: int, user_id: int):
     if not event:
         return False
     return event.creator_id == user_id
+
+# Actualizar descripción del evento (solo creador)
+def update_event_description(db: Session, event_id: int, user_id: int, description: str | None):
+    event = get_event_by_id(db, event_id)
+    if not event:
+        return None, "Evento no encontrado."
+    if event.creator_id != user_id:
+        return None, "Solo el creador puede editar el evento."
+    event.description = description
+    db.commit()
+    db.refresh(event)
+    return event, "Evento actualizado correctamente."
+
+# Eliminar evento (solo creador)
+def delete_event(db: Session, event_id: int, user_id: int):
+    event = get_event_by_id(db, event_id)
+    if not event:
+        return None, "Evento no encontrado."
+    if event.creator_id != user_id:
+        return None, "Solo el creador puede eliminar el evento."
+    db.delete(event)
+    db.commit()
+    return True, "Evento eliminado correctamente."

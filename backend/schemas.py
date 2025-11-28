@@ -76,6 +76,9 @@ class EventBase(BaseModel):
 class EventCreate(EventBase):
     pass
 
+class EventUpdate(BaseModel):
+    description: Optional[str] = None
+
 class EventCreatorResponse(BaseModel):
     id: int
     username: str
