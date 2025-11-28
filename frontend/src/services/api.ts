@@ -143,6 +143,19 @@ export const eventsAPI = {
     const response = await api.get(`/events/${id}/attendees`);
     return response.data;
   },
+
+  update: async (
+    id: number,
+    data: { description?: string }
+  ): Promise<Event> => {
+    const response = await api.put(`/events/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number) => {
+    const response = await api.delete(`/events/${id}`);
+    return response.data;
+  },
 };
 
 export default api;
