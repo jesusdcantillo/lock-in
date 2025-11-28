@@ -1,8 +1,12 @@
 import random
 from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session
-from . import models, schemas
-from .security import get_password_hash, verify_password
+try:
+    from . import models, schemas
+    from .security import get_password_hash, verify_password
+except ImportError:
+    import models, schemas
+    from security import get_password_hash, verify_password
 
 # Crear usuario
 def create_user(db: Session, user: schemas.UserCreate):
