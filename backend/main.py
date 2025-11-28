@@ -5,9 +5,15 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from . import models, schemas, crud
-from .db import engine, SessionLocal
-from .security import verify_password, create_access_token, verify_token
+# Permitir ejecución tanto como paquete (backend.main) como script (main)
+try:
+    from . import models, schemas, crud
+    from .db import engine, SessionLocal
+    from .security import verify_password, create_access_token, verify_token
+except ImportError:
+    import models, schemas, crud
+    from db import engine, SessionLocal
+    from security import verify_password, create_access_token, verify_token
 
 models.Base.metadata.create_all(bind = engine)
 
