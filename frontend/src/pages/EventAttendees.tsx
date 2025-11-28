@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Alert from "../components/ui/Alert";
 import { eventsAPI } from "../services/api";
 import { Users, ArrowLeft, Mail, User as UserIcon } from "lucide-react";
 import type { Attendee } from "../types";
@@ -42,7 +45,7 @@ export default function EventAttendees() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-orange-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-brand-600"></div>
         </div>
       </Layout>
     );
@@ -52,10 +55,14 @@ export default function EventAttendees() {
     return (
       <Layout>
         <div className="text-center py-12">
-          <p className="text-xl text-red-600 mb-4">{error}</p>
-          <Link to={`/events/${id}`} className="text-orange-500 underline">
-            Volver al evento
-          </Link>
+          <Alert variant="error" className="inline-block text-left">
+            {error}
+          </Alert>
+          <div className="mt-4">
+            <Link to={`/events/${id}`}>
+              <Button variant="secondary">Volver al evento</Button>
+            </Link>
+          </div>
         </div>
       </Layout>
     );
@@ -67,49 +74,49 @@ export default function EventAttendees() {
         <div className="flex items-center gap-4">
           <Link
             to={`/events/${id}`}
-            className="text-orange-600 hover:text-orange-700"
+            className="text-brand-600 hover:text-brand-700"
           >
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div>
-            <h1 className="text-4xl font-bold text-orange-600 title">
+            <h1 className="text-4xl font-bold text-brand-700">
               Lista de Asistentes
             </h1>
-            <p className="text-orange-700 mt-1">
+            <p className="text-brand-600 mt-1">
               {attendees.length} personas registradas
             </p>
           </div>
         </div>
 
         {attendees.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 shadow-lg text-center">
-            <Users className="w-16 h-16 text-orange-300 mx-auto mb-4" />
-            <p className="text-xl text-orange-700">
+          <Card className="p-12 text-center">
+            <Users className="w-16 h-16 text-brand-300 mx-auto mb-4" />
+            <p className="text-xl text-brand-700">
               No hay asistentes registrados aún
             </p>
-          </div>
+          </Card>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {attendees.map((attendee) => (
-              <div
+              <Card
                 key={attendee.id}
-                className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow"
+                className="p-6 hover:shadow-2xl transition-shadow"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center flex-shrink-0">
                     <UserIcon className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-orange-800 truncate">
+                    <h3 className="text-lg font-bold text-brand-800 truncate">
                       {attendee.username}
                     </h3>
-                    <div className="flex items-center gap-2 text-orange-600 mt-1">
+                    <div className="flex items-center gap-2 text-brand-600 mt-1">
                       <Mail className="w-4 h-4 flex-shrink-0" />
                       <span className="text-sm truncate">{attendee.email}</span>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
