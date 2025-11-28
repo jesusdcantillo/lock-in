@@ -1,24 +1,6 @@
-import sys
-import os
-
-# Agregar el directorio padre al path para los imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from sqlalchemy.orm import Session
-from sqlalchemy import Column, Integer, String, Text
-from db import SessionLocal, engine, Base
-
-# Definir el modelo Achievement aquí para evitar imports relativos
-class Achievement(Base):
-    __tablename__ = "achievements"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    description = Column(Text)
-    key = Column(String, unique=True, index=True)
-
-# Crear todas las tablas
-Base.metadata.create_all(bind=engine)
+from db import SessionLocal
+from models import Achievement  # Usa el modelo real del proyecto
 
 # Logros predefinidos
 ACHIEVEMENTS = [
@@ -64,47 +46,30 @@ ACHIEVEMENTS = [
     }
 ]
 
-def init_achievements():
-
+def seed_achievements(force: bool = False) -> int:
+    """Inserta los logros si la tabla está vacía. Si force=True, borra y vuelve a insertar.
+    Devuelve la cantidad de logros insertados (0 si ya existían y force=False)."""
     db: Session = SessionLocal()
-    
+    inserted = 0
     try:
-        # Verificar si ya existen logros
-        existing_count = db.query(Achievement).count()
-        
-        if existing_count > 0:
-            print(f"Ya existen {existing_count} logros en la base de datos.")
-            print("¿Deseas sobrescribir? (s/n): ", end="")
-            response = input().lower()
-            
-            if response != 's':
-                print("Operación cancelada.")
-                return
-            
-            # Eliminar logros existentes
+        existing = db.query(Achievement).count()
+        if existing > 0 and not force:
+            return 0
+        if existing > 0 and force:
             db.query(Achievement).delete()
             db.commit()
-            print("Logros anteriores eliminados.")
-        
-        # Insertar los logros predefinidos
-        for achievement_data in ACHIEVEMENTS:
-            achievement = Achievement(**achievement_data)
-            db.add(achievement)
-        
-        db.commit()
-        print(f"\n {len(ACHIEVEMENTS)} logros inicializados correctamente:")
-        
         for ach in ACHIEVEMENTS:
-            print(f"  - {ach['name']}: {ach['description']}")
-        
-        print("\n Sistema de logros listo")
-        
+            db.add(Achievement(**ach))
+        db.commit()
+        inserted = len(ACHIEVEMENTS)
+        return inserted
     except Exception as e:
-        print(f" Error al inicializar logros: {e}")
         db.rollback()
+        print(f"[seed_achievements] Error: {e}")
+        return 0
     finally:
         db.close()
 
 if __name__ == "__main__":
-    print("Inicializador de Logros\n")
-    init_achievements()
+    count = seed_achievements(force=True)
+    print(f"Logros reinicializados: {count}")

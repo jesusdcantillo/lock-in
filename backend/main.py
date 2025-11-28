@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from init_achievements import seed_achievements
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
@@ -34,6 +35,14 @@ app.add_middleware(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 bearer_scheme = HTTPBearer()
+
+@app.on_event("startup")
+def startup_seed():
+    inserted = seed_achievements(force=False)
+    if inserted:
+        print(f"[startup] Insertados {inserted} logros iniciales.")
+    else:
+        print("[startup] Logros ya existentes, no se insertó nada.")
 
 def get_db():
     db = SessionLocal()
