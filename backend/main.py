@@ -22,7 +22,8 @@ app = FastAPI()
 
 # Configurar CORS
 _origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
-frontend_origin = os.getenv("FRONTEND_ORIGIN")  # e.g. https://tu-app.vercel.app
+# Allow either env var name for frontend origin
+frontend_origin = os.getenv("FRONTEND_ORIGIN") or os.getenv("FRONTEND_URL")
 if frontend_origin and frontend_origin not in _origins:
     _origins.append(frontend_origin)
 app.add_middleware(
