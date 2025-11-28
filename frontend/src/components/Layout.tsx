@@ -44,7 +44,7 @@ export default function Layout({ children }: LayoutProps) {
               to="/dashboard"
               className="text-3xl font-bold text-orange-600 title"
             >
-              Lock In
+              LOCK IN
             </Link>
 
             <div className="flex items-center gap-4">
