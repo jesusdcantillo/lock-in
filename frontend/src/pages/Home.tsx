@@ -1,35 +1,38 @@
 import { Link } from "react-router-dom";
 import { Flame, Target, Trophy, Users } from "lucide-react";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-brand-100 to-brand-100">
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 pt-24 md:pt-32 pb-16">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-7xl md:text-8xl font-bold text-orange-600 mb-6 title">
-            Lock In
+          <h1 className="title text-6xl md:text-7xl font-extrabold text-brand-700 mb-6 tracking-wide">
+            LOCK IN
           </h1>
-          <p className="text-3xl md:text-4xl text-orange-800 mb-4 font-semibold">
+          <p className="text-2xl md:text-3xl text-brand-700 mb-4 font-semibold">
             Transforma tu salud
           </p>
-          <p className="text-lg md:text-xl text-orange-700 mb-12 max-w-2xl mx-auto">
-            Lock In promueve una vida activa y saludable a través de metas
+          <p className="text-lg md:text-xl text-brand-600 mb-12 max-w-2xl mx-auto">
+            LOCK IN promueve una vida activa y saludable a través de metas
             diarias y desafíos motivadores para todos.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link
-              to="/login"
-              className="px-8 py-4 bg-orange-500 text-white rounded-lg font-semibold text-lg hover:bg-orange-600 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              Iniciar sesión
+            <Link to="/login" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto px-8 py-3 text-lg">
+                Iniciar sesión
+              </Button>
             </Link>
-            <Link
-              to="/register"
-              className="px-8 py-4 bg-white text-orange-500 border-2 border-orange-500 rounded-lg font-semibold text-lg hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              Registrarme
+            <Link to="/register" className="w-full sm:w-auto">
+              <Button
+                variant="secondary"
+                className="w-full sm:w-auto px-8 py-3 text-lg"
+              >
+                Registrarme
+              </Button>
             </Link>
           </div>
         </div>
@@ -58,23 +61,23 @@ export default function Home() {
               desc: "Conecta con otros en eventos locales",
             },
           ].map((benefit, idx) => (
-            <div
+            <Card
               key={idx}
-              className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2 animate-fade-in"
+              className="animate-fade-in"
               style={{ animationDelay: `${idx * 0.1}s` }}
             >
-              <benefit.icon className="w-12 h-12 text-orange-500 mb-4" />
-              <h3 className="text-xl font-bold text-orange-800 mb-2">
+              <benefit.icon className="w-12 h-12 text-brand-600 mb-4" />
+              <h3 className="text-xl font-bold text-brand-800 mb-2">
                 {benefit.title}
               </h3>
-              <p className="text-orange-700">{benefit.desc}</p>
-            </div>
+              <p className="text-brand-700">{benefit.desc}</p>
+            </Card>
           ))}
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-orange-800 text-white py-8 mt-20">
+      <footer className="bg-brand-800 text-white py-4 md:py-6 mt-16">
         <div className="container mx-auto px-4 text-center">
           <div className="flex flex-col md:flex-row justify-center items-center gap-6 mb-4">
             <p className="flex items-center gap-2">
@@ -84,8 +87,8 @@ export default function Home() {
               <span>✉️</span> contact@lockin.com
             </p>
           </div>
-          <p className="text-orange-200">
-            © 2025 Lock In. Todos los derechos reservados.
+          <p className="text-brand-100/80">
+            © 2025 LOCK IN. Todos los derechos reservados.
           </p>
         </div>
       </footer>
