@@ -11,7 +11,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: FRONTEND_ORIGIN
-        value: https://tu-app.vercel.app
+        value: https://lock-in-mauve.vercel.app/
       # Uncomment and set if using Postgres
       # - key: DATABASE_URL
       #   value: postgres://user:pass@host:port/dbname
