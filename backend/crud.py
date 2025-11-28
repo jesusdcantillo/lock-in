@@ -6,6 +6,14 @@ from .security import get_password_hash, verify_password
 
 # Crear usuario
 def create_user(db: Session, user: schemas.UserCreate):
+    # Verificar si el usuario ya existe
+    existing_user = db.query(models.User).filter(
+        (models.User.username == user.username) | (models.User.email == user.email)
+    ).first()
+    
+    if existing_user:
+        return None
+    
     hashed_password = get_password_hash(user.password)
     db_user = models.User(username = user.username, email = user.email, hashed_password = hashed_password)
     db.add(db_user)
@@ -39,6 +47,10 @@ def create_habit(db: Session, habit: schemas.HabitCreate, user_id: int):
     db.commit()
     db.refresh(db_habit)
     return db_habit
+
+# Obtener hábito por ID
+def get_habit_by_id(db: Session, habit_id: int, user_id: int):
+    return db.query(models.Habit).filter(models.Habit.id == habit_id, models.Habit.owner_id == user_id).first()
 
 # Obtener hábitos por usuario
 def get_habits_by_user(db: Session, user_id: int):
