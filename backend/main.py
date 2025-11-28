@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
@@ -10,6 +11,16 @@ from .security import verify_password, create_access_token, verify_token
 models.Base.metadata.create_all(bind = engine)
 
 app = FastAPI()
+
+# Configurar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 bearer_scheme = HTTPBearer()
 
@@ -36,7 +47,10 @@ def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
 @app.post ("/users", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """Crea un nuevo usuario en la base de datos"""
-    return crud.create_user(db = db, user = user)
+    db_user = crud.create_user(db = db, user = user)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="Usuario o email ya existente")
+    return db_user
 
 # Login
 @app.post("/login")
@@ -62,11 +76,11 @@ def get_profile(token: str = Depends(oauth2_scheme), db: Session = Depends(get_d
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
     return {
-        "message": f"Bienvenido, {user.username}!",
-        "user": {
-            "email": user.email,
-            "created_at": user.created_at
-        }
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "total_points": user.total_points,
+        "created_at": user.created_at
     }
 
 # Crear hábito
@@ -101,6 +115,24 @@ def get_habits(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 
     return crud.get_habits_by_user(db=db, user_id=user.id)
+
+# Obtener hábito específico
+@app.get("/habits/{habit_id}", response_model=schemas.HabitResponse)
+def get_habit(habit_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Obtiene un hábito específico del usuario autenticado"""
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado.")
+    
+    user = crud.get_user_by_username(db, username=payload["sub"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+    habit = crud.get_habit_by_id(db=db, habit_id=habit_id, user_id=user.id)
+    if not habit:
+        raise HTTPException(status_code=404, detail="Hábito no encontrado.")
+    
+    return habit
 
 # Estadísticas del usuario
 @app.get("/stats", response_model=schemas.StatsResponse)
@@ -266,8 +298,14 @@ def get_event_attendees(event_id: int, token: str = Depends(oauth2_scheme), db: 
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
     
+    # Debug: imprimir información
+    event = crud.get_event_by_id(db, event_id=event_id)
+    print(f"DEBUG - Usuario actual ID: {user.id}, Username: {user.username}")
+    print(f"DEBUG - Evento ID: {event_id}, Creator ID: {event.creator_id if event else 'No event'}")
+    print(f"DEBUG - Es creador: {crud.is_event_creator(db, event_id=event_id, user_id=user.id)}")
+    
     # Verificar que el usuario sea el creador del evento
     if not crud.is_event_creator(db, event_id=event_id, user_id=user.id):
-        raise HTTPException(status_code=403, detail="Solo el creador del evento puede ver los asistentes.")
+        raise HTTPException(status_code=403, detail=f"Solo el creador del evento puede ver los asistentes. Tu ID: {user.id}, Creator ID: {event.creator_id if event else 'unknown'}")
     
     return crud.get_event_attendees(db, event_id=event_id)
