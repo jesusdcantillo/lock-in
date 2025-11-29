@@ -10,12 +10,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = DATABASE_URL
-    connect_args = {}
+    # Supabase requiere SSL; usar connect_args apropiado para Postgres
+    if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
+        engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"sslmode": "require"})
+    else:
+        engine = create_engine(SQLALCHEMY_DATABASE_URL)
 else:
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'lockin.db')}"
-    connect_args = {"check_same_thread": False}
-
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

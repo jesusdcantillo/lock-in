@@ -12,6 +12,6 @@ services:
         generateValue: true
       - key: FRONTEND_ORIGIN
         value: https://lock-in-mauve.vercel.app/
-      # Uncomment and set if using Postgres
+      # Descomenta y pega tu cadena de Supabase aquí:
       # - key: DATABASE_URL
-      #   value: postgres://user:pass@host:port/dbname
+      #   value: postgresql://postgres.[ref]:[password]@[host].supabase.co:5432/postgres
