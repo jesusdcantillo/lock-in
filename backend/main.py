@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from init_achievements import seed_achievements
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
@@ -11,10 +10,23 @@ try:
     from . import models, schemas, crud
     from .db import engine, SessionLocal
     from .security import verify_password, create_access_token, verify_token
-except ImportError:
-    import models, schemas, crud
-    from db import engine, SessionLocal
-    from security import verify_password, create_access_token, verify_token
+    from .init_achievements import seed_achievements
+except ImportError as e:
+    if "attempted relative import" in str(e) or "No module named '__main__'" in str(e):
+        # Fallback para cuando se ejecuta como backend.main desde raíz
+        try:
+            from backend import models, schemas, crud
+            from backend.db import engine, SessionLocal
+            from backend.security import verify_password, create_access_token, verify_token
+            from backend.init_achievements import seed_achievements
+        except ImportError:
+            # Fallback final para ejecución como script desde carpeta backend
+            import models, schemas, crud
+            from db import engine, SessionLocal
+            from security import verify_password, create_access_token, verify_token
+            from init_achievements import seed_achievements
+    else:
+        raise
 
 models.Base.metadata.create_all(bind = engine)
 

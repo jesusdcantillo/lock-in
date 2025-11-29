@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session
-from db import SessionLocal
-from models import Achievement  # Usa el modelo real del proyecto
+try:
+    from .db import SessionLocal
+    from .models import Achievement
+except ImportError:
+    from db import SessionLocal
+    from models import Achievement
 
 # Logros predefinidos
 ACHIEVEMENTS = [
